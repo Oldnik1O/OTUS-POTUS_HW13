@@ -1,0 +1,66 @@
+// Учимся применять интерпретатор:
+// - UObject: интерфейс - представляет игровой объект способный выполнять команды
+// - Command: структура, которая представляет команду или приказ выполнения
+// - Tank: структура представляющая объект "Танк"
+
+package main
+import (
+  "errors"
+  "fmt"
+)
+type UObject interface {
+  ExecuteCommand(command *Command) error
+}
+type Command struct {
+  ID             string
+  Action         string
+  InitialVelocity float64
+  PlayerID       string // Это ID игрока, который отдал команду
+}
+type Tank struct {
+  ID       string
+  Velocity float64
+  PlayerID string // Это ID игрока, который управляет танком
+}
+//Метод ExecuteCommand для Tank проверяет - может ли игрок управлять этим танком на основе PlayerID и если да - выполняет действие указанное в команде
+func (t *Tank) ExecuteCommand(command *Command) error {
+  // Проверяем, что приказ от правильного игрока
+  if command.PlayerID != t.PlayerID {
+    return errors.New("unauthorized: this player cannot control this tank")
+  }
+  switch command.Action {
+  case "StartMove":
+    t.Velocity = command.InitialVelocity
+    fmt.Printf("Tank %s started moving with velocity %f\n", t.ID, t.Velocity)
+  default:
+    return errors.New("unknown action")
+  }
+  return nil
+}
+// Создаем новый объект танка и примеры команд которые демонстрируют как танк реагирует на валидные и недопустимые команды
+func main() {
+  tank := &Tank{ID: "548", PlayerID: "player_123"}
+
+  // Допустимый приказ от игрока
+  command := &Command{
+    ID:             "548",
+    Action:         "StartMove",
+    InitialVelocity: 2,
+    PlayerID:       "player_123",
+  }
+  err := tank.ExecuteCommand(command)
+  if err != nil {
+    fmt.Println(err)
+  }
+  // Недопустимый приказ от другого игрока
+  command2 := &Command{
+    ID:             "548",
+    Action:         "StartMove",
+    InitialVelocity: 2,
+    PlayerID:       "player_456",
+  }
+  err = tank.ExecuteCommand(command2)
+  if err != nil {
+    fmt.Println(err)
+  }
+}
